@@ -29,6 +29,8 @@ TABLE_SESSION=${TABLE_SESSION:-}
 DEBUG=${DEBUG:-0}
 DEBUG_SQL=${DEBUG_SQL:-0}
 
+# Apache Configuration
+IGNORE_USER_AGENT=${IGNORE_USER_AGENT:-"kube-probe"}
 LISTEN_PORT=${LISTEN_PORT:-"8080"}
 
 if [ -z "$DB_PASSWORD" ]; then
@@ -45,6 +47,11 @@ if [ "$LISTEN_PORT" != "80" ]; then
     echo "Info: Customizing Apache Listen port to $LISTEN_PORT"
     sed -i "s/Listen 80\$/Listen $LISTEN_PORT/" /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
 fi
+
+# Disable Apache logging for certain User-Agents
+# For example when using a Health Check
+sed -i "/Error/i SetEnvIF User-Agent \"$IGNORE_USER_AGENT\" dontlog" /etc/apache2/sites-available/000-default.conf
+sed -i "s/combined/combined env=\!dontlog/" /etc/apache2/sites-available/000-default.conf
 
 # Check if database is available
 if [ -z "$DB_SOCK" ]; then
